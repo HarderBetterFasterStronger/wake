@@ -1,0 +1,47 @@
+service: wake
+useDotenv: true
+
+plugins:
+  - serverless-python-requirements
+  - serverless-deployment-bucket
+
+custom:
+  deploymentBucket:
+    blockPublicAccess: true
+
+  dotenv:
+    include:
+      - MAC_ADDRESS
+      - PUBLIC_IP
+    required:
+      env:
+        - MAC_ADDRESS
+        - PUBLIC_IP
+
+  pythonRequirements:
+    dockerizePip: false
+    usePipenv: true
+
+provider:
+  name: aws
+  runtime: ${opt:runtime, "python3.9"}
+  stage: ${opt:stage}
+  region: ${opt:region}
+  lambdaHashingVersion: "20201221"
+  apiGateway:
+    shouldStartNameWithService: true
+  deploymentBucket:
+    name: wake-${opt:stage}-deployment-bucket
+    serverSideEncryption: AES256
+    maxPreviousDeploymentArtifacts: 2
+
+functions:
+  wake:
+    handler: wake.up
+    events:
+      - http:
+          path: /
+          method: get
+    environment:
+      MAC_ADDRESS: ${env:MAC_ADDRESS}
+      PUBLIC_IP: ${env:PUBLIC_IP}
